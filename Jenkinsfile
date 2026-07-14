@@ -10,31 +10,33 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                bat 'mvn clean package -DskipTests'
-            }
-        }
-        stage('Tests') {
-            steps {
-                bat 'mvn test'
+                // 'mvn clean verify' compile, teste et génère les rapports JaCoCo
+                bat 'mvn clean verify'
             }
             post {
                 always {
-                    // Utilisation de la classe interne pour éviter l'erreur "NoSuchMethodError"
+                    // Publication des résultats JUnit
                     step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
+                    // Publication du rapport de couverture JaCoCo
+                    step([$class: 'JacocoPublisher', execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'])
                 }
             }
         }
         stage('Archive') {
             steps {
-                // Utilisation de la classe interne pour l'archivage
+                // Archivage du fichier .jar produit
                 step([$class: 'ArtifactArchiver', artifacts: 'target/*.jar', fingerprint: true])
             }
         }
     }
     post {
-        success { echo 'Pipeline reussi avec succes !' }
-        failure { echo 'Pipeline echoue -- consultez les logs.' }
+        success { 
+            echo 'Pipeline reussi avec succes ! JaCoCo et JUnit generes.' 
+        }
+        failure { 
+            echo 'Pipeline echoue -- consultez les logs du Build.' 
+        }
     }
 }
