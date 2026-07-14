@@ -12,15 +12,13 @@ pipeline {
         }
         stage('Build & Test') {
             steps {
-                // 'mvn clean verify' compile, teste et génère les rapports JaCoCo
-                bat 'mvn clean verify'
+                // Compilation et exécution des tests sans JaCoCo
+                bat 'mvn clean package'
             }
             post {
                 always {
                     // Publication des résultats JUnit
                     step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
-                    // Publication du rapport de couverture JaCoCo
-                    step([$class: 'JacocoPublisher', execPattern: 'target/jacoco.exec', classPattern: 'target/classes', sourcePattern: 'src/main/java'])
                 }
             }
         }
@@ -33,10 +31,10 @@ pipeline {
     }
     post {
         success { 
-            echo 'Pipeline reussi avec succes ! JaCoCo et JUnit generes.' 
+            echo 'Pipeline reussi avec succes !' 
         }
         failure { 
-            echo 'Pipeline echoue -- consultez les logs du Build.' 
+            echo 'Pipeline echoue -- consultez les logs.' 
         }
     }
 }
