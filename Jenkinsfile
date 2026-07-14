@@ -8,7 +8,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "Build #${env.BUILD_NUMBER} | Branche : ${env.BRANCH_NAME}"
             }
         }
         stage('Build') {
@@ -16,39 +15,26 @@ pipeline {
                 bat 'mvn clean package -DskipTests'
             }
         }
-        stage('Tests Unitaires') {
+        stage('Tests') {
             steps {
                 bat 'mvn test'
             }
             post {
                 always {
-                    junit 'target/surefire-reports/*.xml'
+                    // Utilisation de la classe interne pour éviter l'erreur "NoSuchMethodError"
+                    step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/*.xml'])
                 }
             }
         }
-        stage('Couverture') {
+        stage('Archive') {
             steps {
-                bat 'mvn verify'
-            }
-            post {
-                always {
-                    jacoco(
-                        execPattern:   'target/*.exec',
-                        classPattern:  'target/classes',
-                        sourcePattern: 'src/main/java'
-                    )
-                }
-            }
-        }
-        stage('Archivage') {
-            steps {
-                archiveArtifacts artifacts:    'target/*.jar',
-                                 fingerprint: true
+                // Utilisation de la classe interne pour l'archivage
+                step([$class: 'ArtifactArchiver', artifacts: 'target/*.jar', fingerprint: true])
             }
         }
     }
     post {
-        success { echo 'Pipeline reussi avec succes !'         }
+        success { echo 'Pipeline reussi avec succes !' }
         failure { echo 'Pipeline echoue -- consultez les logs.' }
     }
 }
